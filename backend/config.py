@@ -15,5 +15,13 @@ class Settings:
     EMAIL_PORT = os.getenv("EMAIL_PORT")
     EMAIL_USER = os.getenv("EMAIL_USER")
     EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+    
+    APP_BASE_URL = os.getenv("APP_BASE_URL")
+    
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    ALGORITHM = os.getenv("ALGORITHM")
+    ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv(
+        "ACCESS_TOKEN_EXPIRE_MINUTES"
+    )
 
 settings = Settings()

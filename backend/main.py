@@ -1,20 +1,11 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from database import get_connection
+from routes import auth
 
 app = FastAPI()
 
-@app.get("/test-db")
-def test_db():
-    try:
-        conn = get_connection()
-        conn.close()
-        return {"status": "Database Connected"}
-    except Exception as e:
-        return {
-            "status": "Database Failed",
-            "error": str(e)
-        }
+app.include_router(auth.router)
 # Serve React frontend build
 app.mount(
     "/",
