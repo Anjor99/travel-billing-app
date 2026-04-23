@@ -9,7 +9,6 @@ import os
 
 app = FastAPI()
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,7 +18,7 @@ app.add_middleware(
 )
 
 # -------------------------
-# API ROUTES FIRST
+# API ROUTES
 # -------------------------
 
 app.include_router(auth.router)
@@ -40,15 +39,12 @@ app.mount(
 )
 
 # -------------------------
-# REACT CATCH-ALL (LAST)
+# REACT APP
 # -------------------------
 
 @app.get("/{full_path:path}")
-async def serve_react(full_path: str):
+def serve_react(full_path: str):
 
-    index_path = os.path.join(
-        frontend_path,
-        "index.html"
+    return FileResponse(
+        os.path.join(frontend_path, "index.html")
     )
-
-    return FileResponse(index_path)

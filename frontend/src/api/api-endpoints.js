@@ -1,12 +1,14 @@
 const endpoints = {
 
   auth:{
-    login: "/auth/login",
-    register: "/auth/register",
+    login: "/api/auth/login",
+    register: "/api/auth/register",
   },
   
   bills:{
-    createBill: "/bills/",
+    createBill: "/api/bills/",
+    list: "/api/bills/",
+    getById: (id) => `/api/bills/${id}`,
   }
 };
 

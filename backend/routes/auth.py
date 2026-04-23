@@ -10,7 +10,7 @@ from schemas.auth_schema import RegisterRequest, LoginRequest
 import uuid
 
 router = APIRouter(
-    prefix="/auth",
+    prefix="/api/auth",
     tags=["Authentication"]
 )
 
