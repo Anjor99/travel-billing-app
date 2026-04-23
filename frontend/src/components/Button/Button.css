@@ -1,0 +1,25 @@
+.btn-primary {
+
+  background-color: darkslateblue;
+
+  color: white;
+
+  border: none;
+
+  padding: 12px;
+
+  border-radius: 6px;
+
+  width: 100%;
+
+  font-size: 16px;
+
+  cursor: pointer;
+
+}
+
+.btn-primary:hover {
+
+  opacity: 0.9;
+
+}

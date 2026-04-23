@@ -1,0 +1,73 @@
+.input-container {
+
+  position: relative;
+
+  margin-bottom: 18px;
+
+}
+
+/* Input */
+
+.floating-input {
+
+  width: 100%;
+
+  padding: 14px 10px;
+
+  font-size: 14px;
+
+  border: 1px solid #ccc;
+
+  border-radius: 6px;
+
+  outline: none;
+
+  background: white;
+
+}
+
+/* Label */
+
+.floating-label {
+
+  position: absolute;
+
+  left: 10px;
+
+  top: 14px;
+
+  color: #888;
+
+  font-size: 14px;
+
+  background: white;
+
+  padding: 0 4px;
+
+  transition: 0.2s ease;
+
+  pointer-events: none;
+
+}
+
+/* Move label when focused */
+
+.floating-input:focus + .floating-label {
+
+  top: -8px;
+
+  font-size: 12px;
+
+  color: darkslateblue;
+
+}
+
+/* Move label when value exists */
+
+.floating-input:not(:placeholder-shown) + .floating-label {
+
+  top: -8px;
+
+  font-size: 12px;
+
+}

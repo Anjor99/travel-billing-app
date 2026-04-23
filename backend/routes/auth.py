@@ -6,6 +6,7 @@ from utils.security import (
     create_access_token
 )
 from services.email_service import send_verification_email
+from schemas.auth_schema import RegisterRequest, LoginRequest
 import uuid
 
 router = APIRouter(
@@ -15,10 +16,11 @@ router = APIRouter(
 
 # REGISTER USER
 @router.post("/register")
-def register_user(
-    email: str,
-    password: str
-):
+def register_user(payload: RegisterRequest):
+
+    name = payload.name
+    email = payload.email
+    password = payload.password
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -30,6 +32,10 @@ def register_user(
     )
 
     if cursor.fetchone():
+
+        cursor.close()
+        conn.close()
+
         raise HTTPException(
             status_code=400,
             detail="Email already registered"
@@ -41,16 +47,18 @@ def register_user(
 
     query = """
         INSERT INTO users (
+            name,
             email,
             password,
             verification_token
         )
-        VALUES (%s, %s, %s)
+        VALUES (%s, %s, %s, %s)
     """
 
     cursor.execute(
         query,
         (
+            name,
             email,
             hashed_password,
             verification_token
@@ -110,10 +118,7 @@ def verify_email(token: str):
 
 # LOGIN
 @router.post("/login")
-def login_user(
-    email: str,
-    password: str
-):
+def login_user(payload: LoginRequest):
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -124,7 +129,7 @@ def login_user(
         FROM users
         WHERE email=%s
         """,
-        (email,)
+        (payload.email,)
     )
 
     user = cursor.fetchone()
@@ -141,7 +146,7 @@ def login_user(
     user_id, hashed_password, is_verified = user
 
     if not verify_password(
-        password,
+        payload.password,
         hashed_password
     ):
         raise HTTPException(

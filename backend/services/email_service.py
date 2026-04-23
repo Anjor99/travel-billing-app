@@ -8,7 +8,7 @@ def send_verification_email(
 ):
 
     verification_link = (
-        f"{settings.APP_BASE_URL}/verify-email?token={token}"
+        f"{settings.APP_BASE_URL}/auth/verify-email?token={token}"
     )
 
     subject = "Verify Your Email"
