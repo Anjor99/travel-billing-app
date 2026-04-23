@@ -9,9 +9,6 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 
 import Grid from "@mui/material/Grid";
-
-import Button from "@mui/material/Button";
-
 import Box from "@mui/material/Box";
 
 import { getBills }
@@ -72,7 +69,7 @@ function BillsList() {
 
   };
 
-  // Apply search filter
+  // Apply search
 
   const applyFilters = () => {
 
@@ -84,6 +81,7 @@ function BillsList() {
           .includes(
             search.toLowerCase()
           )
+
         ||
 
         bill.bill_no
@@ -115,157 +113,122 @@ function BillsList() {
 
     <Container
       maxWidth="sm"
-      sx={{ mt: 2 }}
+      sx={{
+        mt: 2,
+        display: "flex",
+        flexDirection: "column"
+      }}
     >
 
-      {/* Page Title */}
+      {/* HEADER */}
 
-      <Typography
-        variant="h5"
-        sx={{ mb: 2 }}
+      <Box>
+
+        <Typography
+          variant="h5"
+          sx={{ mb: 2 }}
+        >
+          Bills
+        </Typography>
+
+        <TextField
+          label="Search customer / bill no"
+          size="small"
+          fullWidth
+          sx={{ mb: 2 }}
+          value={search}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
+        />
+
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+
+          <Grid item xs={6}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="body2">
+                Total Bills
+              </Typography>
+              <Typography variant="h6">
+                {totalBills}
+              </Typography>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={6}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="body2">
+                Total Amount
+              </Typography>
+              <Typography variant="h6">
+                ₹ {totalAmount}
+              </Typography>
+            </Paper>
+          </Grid>
+
+        </Grid>
+
+      </Box>
+
+      {/* SCROLLABLE LIST */}
+
+      <Box
+        sx={{
+          maxHeight: "55vh",
+          overflowY: "auto"
+        }}
       >
 
-        Bills
+        {filteredBills.map((bill) => (
 
-      </Typography>
+          <Card
+            key={bill.id}
+            sx={{ mb: 2 }}
+            onClick={() =>
+              navigate(`/bills/${bill.id}`)
+            }
+          >
 
-      {/* Search */}
+            <CardContent>
 
-      <TextField
-        label="Search customer / bill no"
-        variant="outlined"
-        size="small"
-        fullWidth
-        sx={{ mb: 2 }}
-        value={search}
-        onChange={(e) =>
-          setSearch(e.target.value)
-        }
-      />
-
-      {/* Aggregations */}
-
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-
-        <Grid item xs={6}>
-
-          <Paper sx={{ p: 2 }}>
-
-            <Typography variant="body2">
-
-              Total Bills
-
-            </Typography>
-
-            <Typography variant="h6">
-
-              {totalBills}
-
-            </Typography>
-
-          </Paper>
-
-        </Grid>
-
-        <Grid item xs={6}>
-
-          <Paper sx={{ p: 2 }}>
-
-            <Typography variant="body2">
-
-              Total Amount
-
-            </Typography>
-
-            <Typography variant="h6">
-
-              ₹ {totalAmount}
-
-            </Typography>
-
-          </Paper>
-
-        </Grid>
-
-      </Grid>
-
-      {/* Bills Cards */}
-
-      {filteredBills.map((bill) => (
-
-        <Card
-          key={bill.id}
-          sx={{
-            mb: 2,
-            cursor: "pointer"
-          }}
-
-          onClick={() =>
-            navigate(
-              `/bills/${bill.id}`
-            )
-          }
-        >
-
-          <CardContent>
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent:
-                  "space-between"
-              }}
-            >
-
-              <Typography
-                variant="subtitle1"
-              >
-
-                Bill #{bill.bill_no}
-
-              </Typography>
-
-              <Typography
-                variant="subtitle1"
+              <Box
                 sx={{
-                  fontWeight: 600
+                  display: "flex",
+                  justifyContent: "space-between"
                 }}
               >
 
-                ₹ {bill.total_amount}
+                <Typography>
+                  Bill #{bill.bill_no}
+                </Typography>
 
+                <Typography
+                  sx={{ fontWeight: 600 }}
+                >
+                  ₹ {bill.total_amount}
+                </Typography>
+
+              </Box>
+
+              <Typography color="text.secondary">
+                {bill.customer_name}
               </Typography>
 
-            </Box>
+              <Typography color="text.secondary">
+                {bill.bill_date}
+              </Typography>
 
-            <Typography
-              variant="body2"
-              color="text.secondary"
-            >
+            </CardContent>
 
-              {bill.customer_name}
+          </Card>
 
-            </Typography>
+        ))}
 
-            <Typography
-              variant="body2"
-              color="text.secondary"
-            >
-
-              {bill.bill_date}
-
-            </Typography>
-
-          </CardContent>
-
-        </Card>
-
-      ))}
+      </Box>
 
     </Container>
 
   );
-
 }
 
 export default BillsList;

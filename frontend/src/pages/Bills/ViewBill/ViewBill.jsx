@@ -55,7 +55,8 @@ import EditIcon
 import {
   getBillById,
   deleteBill,
-  downloadBillPdf
+  downloadBillPdf,
+  downloadBillPdfToShare
 } from "../../../api/bills";
 
 function ViewBill() {
@@ -129,6 +130,76 @@ function ViewBill() {
     downloadBillPdf(id);
 
   };
+
+  const handleShare =
+  async () => {
+
+  try {
+
+    const blob =
+      await downloadBillPdfToShare(id);
+
+    const file =
+      new File(
+
+        [blob],
+
+        `Bill_${bill.bill_no}.pdf`,
+
+        {
+          type: "application/pdf"
+        }
+
+      );
+
+    // 📱 Mobile Share
+
+    if (navigator.share) {
+
+      await navigator.share({
+
+        title: "Travel Bill",
+
+        text: `Bill #${bill.bill_no}`,
+
+        files: [file]
+
+      });
+
+    }
+
+    else {
+
+      // 💻 Desktop fallback
+
+      const url =
+        window.URL.createObjectURL(blob);
+
+      const a =
+        document.createElement("a");
+
+      a.href = url;
+
+      a.download =
+        `Bill_${bill.bill_no}.pdf`;
+
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+
+    }
+
+  }
+
+  catch (err) {
+
+    console.error(err);
+
+    alert("Unable to share file");
+
+  }
+
+};
 
   if (!bill) {
 
@@ -396,10 +467,9 @@ function ViewBill() {
               fullWidth
               variant="outlined"
               startIcon={<ShareIcon />}
+              onClick={handleShare}
             >
-
-              Share
-
+                Share
             </Button>
 
           </Grid>

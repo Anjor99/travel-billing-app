@@ -9,6 +9,7 @@ const endpoints = {
     createBill: "/api/bills/",
     list: "/api/bills/",
     getById: (id) => `/api/bills/${id}`,
+    downloadBillPdf: (id) => `/api/bills/${id}/pdf`,
   }
 };
 

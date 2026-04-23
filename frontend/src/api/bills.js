@@ -109,3 +109,21 @@ export const downloadBillPdf = async (id) => {
   }
 
 };
+
+export const downloadBillPdfToShare =
+  async (billId) => {
+
+  const res =
+    await apiClient.get(
+
+      endpoints.bills.downloadBillPdf(billId),
+
+      {
+        responseType: "blob"
+      }
+
+    );
+
+  return res.data;
+
+};
