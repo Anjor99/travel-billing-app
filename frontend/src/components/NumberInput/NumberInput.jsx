@@ -6,28 +6,31 @@ function NumberInput({
   name,
   value,
   onChange,
-  placeholder,
-  fullWidth = true
+  error
 
 }) {
 
   return (
 
     <TextField
+
+      fullWidth
+
       label={label}
+
       name={name}
+
       type="number"
-      value={value}
+
+      value={value ?? ""}
+
       onChange={onChange}
-      placeholder={placeholder}
-      variant="outlined"
-      fullWidth={fullWidth}
-      size="small"
+
       margin="normal"
 
-      inputProps={{
-        min: 0
-      }}
+      error={!!error}
+
+      helperText={error}
 
     />
 

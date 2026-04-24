@@ -4,88 +4,109 @@ import Register from "./pages/Register/Register";
 import CreateBill from "./pages/Bills/CreateBill/CreateBill";
 import BillsList from "./pages/Bills/BillsList/BillsList";
 import ViewBill from "./pages/Bills/ViewBill/ViewBill";
+import EditBill from "./pages/Bills/EditBill/EditBill";
 import Navbar from "./components/Navbar/Navbar";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./utils/ProtectedRoute";
+import { AlertProvider } from "./context/AlertContext";
 
 function App() {
 
   return (
 
-    <BrowserRouter>
+    <AlertProvider>
+      <BrowserRouter>
+        
+        <Routes>
 
-      <Routes>
+          {/* Login */}
 
-        {/* Login */}
+          <Route
+            path="/"
+            element={<Login />}
+          />
 
-        <Route
-          path="/"
-          element={<Login />}
-        />
+          {/* Register */}
 
-        {/* Register */}
+          <Route
+            path="/register"
+            element={<Register />}
+          />
 
-        <Route
-          path="/register"
-          element={<Register />}
-        />
+          {/* Protected Routes */}
 
-        {/* Protected Routes */}
+          <Route
+            path="/create-bill"
+            element={
 
-        <Route
-          path="/create-bill"
-          element={
+              <ProtectedRoute>
 
-            <ProtectedRoute>
+                <Layout>
 
-              <Layout>
+                  <CreateBill />
 
-                <CreateBill />
+                </Layout>
 
-              </Layout>
+              </ProtectedRoute>
 
-            </ProtectedRoute>
+            }
+          />
 
-          }
-        />
+          <Route
+            path="/bills"
+            element={
 
-        <Route
-          path="/bills"
-          element={
+              <ProtectedRoute>
 
-            <ProtectedRoute>
+                <Layout>
 
-              <Layout>
+                  <BillsList />
 
-                <BillsList />
+                </Layout>
 
-              </Layout>
+              </ProtectedRoute>
 
-            </ProtectedRoute>
+            }
+          />
 
-          }
-        />
+          <Route
+            path="/bills/:id"
+            element={
 
-        <Route
-          path="/bills/:id"
-          element={
+              <ProtectedRoute>
 
-            <ProtectedRoute>
+                <Layout>
 
-              <Layout>
+                  <ViewBill />
 
-                <ViewBill />
+                </Layout>
 
-              </Layout>
+              </ProtectedRoute>
 
-            </ProtectedRoute>
+            }
+          />
 
-          }
-        />
+          <Route
+            path="/bills/:id/edit"
+            element={
 
-      </Routes>
+              <ProtectedRoute>
 
-    </BrowserRouter>
+                <Layout>
+
+                  <EditBill />
+
+                </Layout>
+
+              </ProtectedRoute>
+
+            }
+          />
+
+        </Routes>
+
+      </BrowserRouter>
+    </AlertProvider>
 
   );
 

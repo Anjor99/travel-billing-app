@@ -7,22 +7,32 @@ function InputField({
   value,
   onChange,
   type = "text",
-  fullWidth = true
+  error
 
 }) {
 
   return (
 
     <TextField
+
+      fullWidth
+
       label={label}
+
       name={name}
+
       type={type}
-      value={value}
+
+      value={value || ""}
+
       onChange={onChange}
-      variant="outlined"
-      fullWidth={fullWidth}
-      size="small"
+
       margin="normal"
+
+      error={!!error}
+
+      helperText={error}
+
     />
 
   );

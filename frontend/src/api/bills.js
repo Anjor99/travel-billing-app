@@ -40,6 +40,23 @@ export const getBillById = async (id) => {
 
 };
 
+// UPDATE BILL
+
+export const updateBill =
+  async (billId, data) => {
+
+  const res =
+    await apiClient.put(
+
+      `/api/bills/${billId}`,
+      data
+
+    );
+
+  return res.data;
+
+};
+
 /* DELETE BILL */
 
 export const deleteBill = async (id) => {

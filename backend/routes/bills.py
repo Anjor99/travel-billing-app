@@ -23,6 +23,21 @@ from num2words import num2words
 import os
 
 from fastapi import BackgroundTasks
+from reportlab.lib.styles import ParagraphStyle
+
+wrap_style = ParagraphStyle(
+
+    name="WrapStyle",
+
+    fontName="NotoSans",
+
+    fontSize=10,
+
+    leading=12,
+
+    wordWrap="LTR"
+
+)
 
 # ---------- FILE DELETE FUNCTION ----------
 
@@ -332,6 +347,168 @@ def get_single_bill(
         "is_return": row[14]
 
     }
+
+@router.put("/{bill_id}")
+def update_bill(
+
+    bill_id: int,
+    payload: CreateBillRequest,
+    user_id: int = Depends(get_current_user)
+
+):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # ---------- FETCH EXISTING ----------
+
+    cursor.execute(
+        """
+        SELECT
+            customer_id,
+            vehicle_id,
+            trip_id
+        FROM bills
+        WHERE id = %s
+        AND user_id = %s
+        """,
+        (bill_id, user_id)
+    )
+
+    row = cursor.fetchone()
+
+    if not row:
+
+        cursor.close()
+        conn.close()
+
+        return {"error": "Bill not found"}
+
+    customer_id, vehicle_id, trip_id = row
+
+    # ---------- UPDATE CUSTOMER ----------
+
+    cursor.execute(
+        """
+        UPDATE customers
+        SET
+            name = %s,
+            phone = %s
+        WHERE id = %s
+        """,
+        (
+            payload.customer_name,
+            payload.customer_phone,
+            customer_id
+        )
+    )
+
+    # ---------- UPDATE VEHICLE ----------
+
+    if vehicle_id:
+
+        cursor.execute(
+            """
+            UPDATE vehicles
+            SET vehicle_no = %s
+            WHERE id = %s
+            """,
+            (
+                payload.vehicle_no,
+                vehicle_id
+            )
+        )
+
+    # ---------- UPDATE TRIP ----------
+
+    cursor.execute(
+        """
+        UPDATE trips
+        SET
+
+            source = %s,
+            destination = %s,
+
+            total_km = %s,
+            rate_per_km = %s,
+
+            per_day_km = %s,
+            total_nights = %s,
+            toll_tax_parking = %s,
+
+            is_return = %s
+
+        WHERE id = %s
+        """,
+        (
+
+            payload.source,
+            payload.destination,
+
+            payload.total_km,
+            payload.rate_per_km,
+
+            payload.per_day_km,
+            payload.total_nights,
+            payload.toll_tax_parking,
+
+            payload.is_return,
+
+            trip_id
+
+        )
+    )
+
+    # ---------- RECALCULATE TOTAL ----------
+
+    trip_amount = (
+
+        payload.total_km
+        * payload.rate_per_km
+
+    )
+
+    total_amount = (
+
+        trip_amount
+        + payload.toll_tax_parking
+        + payload.total_nights
+
+    )
+
+    # ---------- UPDATE BILL ----------
+
+    cursor.execute(
+        """
+        UPDATE bills
+        SET
+
+            total_amount = %s,
+            bill_date = %s
+
+        WHERE id = %s
+        """,
+        (
+
+            total_amount,
+            payload.bill_date,
+
+            bill_id
+
+        )
+    )
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return {
+
+        "message": "Bill updated",
+        "bill_id": bill_id
+
+    }
     
 @router.delete("/{bill_id}")
 def delete_bill(
@@ -369,17 +546,53 @@ def download_bill_pdf(
 
     # ---------- FONT REGISTER ----------
 
-    font_path = os.path.join(
+    font_dir = os.path.join(
         os.getcwd(),
-        "fonts",
+        "fonts"
+    )
+
+    normal_font = os.path.join(
+        font_dir,
         "NotoSans-VariableFont_wdth,wght.ttf"
     )
 
+    bold_font = os.path.join(
+        font_dir,
+        "NotoSans-Bold.ttf"
+    )
+
     pdfmetrics.registerFont(
-        TTFont(
-            "NotoSans",
-            font_path
-        )
+        TTFont("NotoSans", normal_font)
+    )
+
+    pdfmetrics.registerFont(
+        TTFont("NotoSans-Bold", bold_font)
+    )
+
+    # ---------- STYLES ----------
+
+    wrap_style = ParagraphStyle(
+
+        name="WrapStyle",
+
+        fontName="NotoSans",
+
+        fontSize=10,
+
+        leading=12
+
+    )
+
+    bold_label_style = ParagraphStyle(
+
+        name="BoldLabel",
+
+        fontName="NotoSans-Bold",
+
+        fontSize=10,
+
+        leading=12
+
     )
 
     # ---------- FETCH DATA ----------
@@ -479,16 +692,15 @@ def download_bill_pdf(
 
     file_path = f"bill_{bill_no}.pdf"
 
-    styles = getSampleStyleSheet()
-
-    styles["Normal"].fontName = "NotoSans"
-
     doc = SimpleDocTemplate(
+
         file_path,
+
         rightMargin=20,
         leftMargin=20,
         topMargin=20,
         bottomMargin=20
+
     )
 
     elements = []
@@ -498,20 +710,29 @@ def download_bill_pdf(
     header_table = Table([
 
         [
-            f"Bill No: {bill_no}",
-            f"Vehicle: {vehicle_no or '-'}",
-            f"Date: {bill_date}"
+
+            Paragraph(
+                f"Bill No: {bill_no}",
+                wrap_style
+            ),
+
+            Paragraph(
+                f"Vehicle: {vehicle_no or '-'}",
+                wrap_style
+            ),
+
+            Paragraph(
+                f"Date: {bill_date}",
+                wrap_style
+            )
+
         ]
 
     ], colWidths=[150,150,150])
 
     header_table.setStyle(TableStyle([
 
-        ("GRID", (0,0), (-1,-1), 1, colors.black),
-
-        ("FONTNAME",
-         (0,0), (-1,-1),
-         "NotoSans")
+        ("GRID", (0,0), (-1,-1), 1, colors.black)
 
     ]))
 
@@ -519,13 +740,18 @@ def download_bill_pdf(
 
     elements.append(Spacer(1, 10))
 
-    # ---------- CUSTOMER ----------
+    # ---------- NAME OF PARTY ----------
 
     elements.append(
 
         Paragraph(
-            f"<b>Name of Party:</b> {customer_name}",
-            styles["Normal"]
+
+            f'<font name="NotoSans-Bold">'
+            f'Name of Party:</font> '
+            f'{customer_name}',
+
+            wrap_style
+
         )
 
     )
@@ -536,33 +762,51 @@ def download_bill_pdf(
 
     particulars_data = [
 
-        ["PARTICULARS", "AMOUNT"],
+        [
+            Paragraph("<b>PARTICULARS</b>", wrap_style),
+            Paragraph("<b>AMOUNT</b>", wrap_style)
+        ],
 
-        ["Rate Per KM",
-         f"₹ {rate_per_km}"],
+        [
+            Paragraph("Rate Per KM", wrap_style),
+            Paragraph(f"₹ {rate_per_km}", wrap_style)
+        ],
 
-        ["Per Day KM",
-         per_day_km],
+        [
+            Paragraph("Per Day KM", wrap_style),
+            Paragraph(str(per_day_km), wrap_style)
+        ],
 
-        ["Total Night",
-         f"₹ {total_nights}"],
+        [
+            Paragraph("Total Night", wrap_style),
+            Paragraph(f"₹ {total_nights}", wrap_style)
+        ],
 
-        ["Total KM",
-         f"{total_km} KM"],
+        [
+            Paragraph("Total KM", wrap_style),
+            Paragraph(f"{total_km} KM", wrap_style)
+        ],
 
-        ["Toll, Tax & Parking",
-         f"₹ {toll_tax_parking}"],
+        [
+            Paragraph("Toll, Tax & Parking", wrap_style),
+            Paragraph(f"₹ {toll_tax_parking}", wrap_style)
+        ],
 
-        ["Others", ""],
+        [
+            Paragraph("Others", wrap_style),
+            Paragraph("", wrap_style)
+        ],
 
-        ["Visit Place",
-         visit_place],
+        [
+            Paragraph("Visit Place", wrap_style),
+            Paragraph(visit_place, wrap_style)
+        ],
 
-        ["", ""],
-        ["", ""],
-        ["", ""],
-        ["", ""],
-        ["", ""]
+        ["",""],
+        ["",""],
+        ["",""],
+        ["",""],
+        ["",""]
 
     ]
 
@@ -570,9 +814,7 @@ def download_bill_pdf(
 
         particulars_data,
 
-        colWidths=[260,140],
-
-        rowHeights=[22] * len(particulars_data)
+        colWidths=[260,140]
 
     )
 
@@ -583,10 +825,6 @@ def download_bill_pdf(
         ("BACKGROUND",
          (0,0), (-1,0),
          colors.lightgrey),
-
-        ("FONTNAME",
-         (0,0), (-1,-1),
-         "NotoSans"),
 
         ("ALIGN",
          (1,1), (-1,-1),
@@ -602,8 +840,19 @@ def download_bill_pdf(
 
     total_table = Table([
 
-        ["TOTAL",
-         f"₹ {total_amount}"]
+        [
+
+            Paragraph(
+                "<b>TOTAL</b>",
+                wrap_style
+            ),
+
+            Paragraph(
+                f"\u20B9 {total_amount}",
+                wrap_style
+            )
+
+        ]
 
     ],
 
@@ -619,10 +868,6 @@ def download_bill_pdf(
          (0,0), (-1,0),
          colors.lightgrey),
 
-        ("FONTNAME",
-         (0,0), (-1,-1),
-         "NotoSans"),
-
         ("ALIGN",
          (1,0), (-1,0),
          "RIGHT")
@@ -633,13 +878,18 @@ def download_bill_pdf(
 
     elements.append(Spacer(1, 10))
 
-    # ---------- AMOUNT WORDS ----------
+    # ---------- RS IN WORDS ----------
 
     elements.append(
 
         Paragraph(
-            f"<b>Rs. in words:</b> {amount_words}",
-            styles["Normal"]
+
+            f'<font name="NotoSans-Bold">'
+            f'Rs. in words:</font> '
+            f'{amount_words}',
+
+            wrap_style
+
         )
 
     )

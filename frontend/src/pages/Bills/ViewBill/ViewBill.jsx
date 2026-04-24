@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAlert } from "../../../context/AlertContext";
+import ConfirmDialog from "../../../components/ConfirmDialogue/ConfirmDialogue";
 
 /* MUI */
 
@@ -60,6 +62,7 @@ import {
 } from "../../../api/bills";
 
 function ViewBill() {
+  const { showAlert } = useAlert();
 
   const { id } = useParams();
 
@@ -67,6 +70,8 @@ function ViewBill() {
 
   const [bill, setBill] =
     useState(null);
+
+  const [confirmOpen,setConfirmOpen] = useState(false);
 
   useEffect(() => {
 
@@ -98,26 +103,33 @@ function ViewBill() {
   const handleDelete =
     async () => {
 
-      const confirmDelete =
-        window.confirm(
-          "Delete this bill?"
-        );
-
-      if (!confirmDelete)
-        return;
-
       try {
 
         await deleteBill(id);
 
-        alert("Bill deleted");
+        showAlert(
+          "Bill deleted",
+          "success"
+        );
 
         navigate("/bills");
 
       }
+
       catch (err) {
 
         console.error(err);
+
+        showAlert(
+          "Delete failed",
+          "error"
+        );
+
+      }
+
+      finally {
+
+        setConfirmOpen(false);
 
       }
 
@@ -195,7 +207,7 @@ function ViewBill() {
 
     console.error(err);
 
-    alert("Unable to share file");
+    showAlert("Unable to share file","error");
 
   }
 
@@ -453,6 +465,11 @@ function ViewBill() {
               fullWidth
               variant="outlined"
               startIcon={<EditIcon />}
+              onClick={() =>
+                navigate(
+                  `/bills/${id}/edit`
+                )
+              }
             >
 
               Edit
@@ -496,11 +513,11 @@ function ViewBill() {
               variant="contained"
               color="error"
               startIcon={<DeleteIcon />}
-              onClick={handleDelete}
+              onClick={() =>
+                setConfirmOpen(true)
+              }
             >
-
               Delete
-
             </Button>
 
           </Grid>
@@ -508,6 +525,21 @@ function ViewBill() {
         </Grid>
 
       </Paper>
+      <ConfirmDialog
+
+        open={confirmOpen}
+
+        title="Delete Bill"
+
+        message={`Delete Bill #${bill.bill_no}?`}
+
+        onConfirm={handleDelete}
+
+        onCancel={() =>
+          setConfirmOpen(false)
+        }
+
+      />
 
     </Container>
 

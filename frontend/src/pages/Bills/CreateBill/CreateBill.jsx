@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import InputField
   from "../../../components/InputField/InputField";
@@ -18,6 +19,8 @@ import Button
 import { createBill }
   from "../../../api/bills";
 
+import { useAlert } from "../../../context/AlertContext";
+
 /* MUI Layout Components */
 
 import Container from "@mui/material/Container";
@@ -28,6 +31,8 @@ import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 
 function CreateBill() {
+  const { showAlert } = useAlert();
+  const navigate = useNavigate();
 
   const [form, setForm] =
     useState({
@@ -40,12 +45,12 @@ function CreateBill() {
       source: "",
       destination: "",
 
-      total_km: 0,
-      rate_per_km: 0,
+      total_km: "",
+      rate_per_km: "",
 
-      per_day_km: 0,
-      total_nights: 0,
-      toll_tax_parking: 0,
+      per_day_km: "",
+      total_nights: "",
+      toll_tax_parking: "",
 
       is_return: false,
 
@@ -72,27 +77,119 @@ function CreateBill() {
 
   };
 
+  const validateForm = () => {
+
+  if (!form.customer_name.trim()) {
+
+    showAlert("Customer name is required","warning");
+    return false;
+
+  }
+
+  if (!form.source.trim()) {
+
+    showAlert("Source is required","warning");
+    return false;
+
+  }
+
+  if (!form.destination.trim()) {
+
+    showAlert("Destination is required","warning");
+    return false;
+
+  }
+
+  if (!form.total_km || form.total_km <= 0) {
+
+    showAlert("Enter valid Total KM","warning");
+    return false;
+
+  }
+
+  if (!form.rate_per_km || form.rate_per_km <= 0) {
+
+    showAlert("Enter valid Rate per KM","warning");
+    return false;
+
+  }
+
+  if (!form.bill_date) {
+
+    showAlert("Select bill date","warning");
+    return false;
+
+  }
+
+  if (
+    form.customer_phone &&
+    !/^[0-9]{10}$/.test(form.customer_phone)
+  ) {
+
+    showAlert("Phone must be 10 digits","warning");
+    return false;
+
+  }
+
+  return true;
+
+};
+
   // Submit
   const handleSubmit =
     async () => {
 
-      try {
+    // 🔴 Validate first
 
-        const res =
-          await createBill(form);
+    if (!validateForm())
+      return;
 
-        alert(
-          `Bill Created! Bill No: ${res.bill_no}`
+    try {
+
+      const payload = {
+
+        ...form,
+
+        // Convert empty numbers → 0
+
+        per_day_km:
+          form.per_day_km || 0,
+
+        total_nights:
+          form.total_nights || 0,
+
+        toll_tax_parking:
+          form.toll_tax_parking || 0
+
+      };
+
+      const res =
+        await createBill(payload);
+
+      showAlert(
+        `Bill Created! Bill No: ${res.bill_no}`,
+        "success"
+      );
+
+      // Navigate to bill view
+
+      setTimeout(() => {
+
+        navigate(
+          `/bills/${res.bill_id}`
         );
 
-      }
-      catch (err) {
+      }, 700);
 
-        console.error(err);
+    }
 
-        alert("Error creating bill");
+    catch (err) {
 
-      }
+      console.error(err);
+
+      showAlert("Error creating bill","warning");
+
+    }
 
   };
 
