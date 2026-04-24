@@ -18,6 +18,8 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 
 import ListItemIcon from "@mui/material/ListItemIcon";
+import SettingsIcon
+  from "@mui/icons-material/Settings";
 import ListItemText from "@mui/material/ListItemText";
 
 import Divider from "@mui/material/Divider";
@@ -163,6 +165,33 @@ function Navbar() {
 
               <ListItemText
                 primary="View Bills"
+              />
+
+            </ListItemButton>
+
+          </ListItem>
+          {/* Settings */}
+
+          <ListItem disablePadding>
+
+            <ListItemButton
+              onClick={() => {
+
+                navigate("/settings");
+
+                setOpen(false);
+
+              }}
+            >
+
+              <ListItemIcon>
+
+                <SettingsIcon />
+
+              </ListItemIcon>
+
+              <ListItemText
+                primary="Settings"
               />
 
             </ListItemButton>

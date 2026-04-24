@@ -5,6 +5,7 @@ import CreateBill from "./pages/Bills/CreateBill/CreateBill";
 import BillsList from "./pages/Bills/BillsList/BillsList";
 import ViewBill from "./pages/Bills/ViewBill/ViewBill";
 import EditBill from "./pages/Bills/EditBill/EditBill";
+import Settings from "./pages/Settings/Settings";
 import Navbar from "./components/Navbar/Navbar";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./utils/ProtectedRoute";
@@ -100,6 +101,17 @@ function App() {
 
               </ProtectedRoute>
 
+            }
+          />
+
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Settings />
+                </Layout>
+              </ProtectedRoute>
             }
           />
 

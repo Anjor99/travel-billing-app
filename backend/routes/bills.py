@@ -7,7 +7,8 @@ from reportlab.platypus import (
     Table,
     TableStyle,
     Paragraph,
-    Spacer
+    Spacer,
+    Image
 )
 
 from reportlab.lib import colors
@@ -21,6 +22,8 @@ from fastapi.responses import FileResponse
 from num2words import num2words
 
 import os
+import requests
+import io
 
 from fastapi import BackgroundTasks
 from reportlab.lib.styles import ParagraphStyle
@@ -539,9 +542,11 @@ def delete_bill(
 
 @router.get("/{bill_id}/pdf")
 def download_bill_pdf(
+
     bill_id: int,
     background_tasks: BackgroundTasks,
     user_id: int = Depends(get_current_user)
+
 ):
 
     # ---------- FONT REGISTER ----------
@@ -569,25 +574,13 @@ def download_bill_pdf(
         TTFont("NotoSans-Bold", bold_font)
     )
 
-    # ---------- STYLES ----------
+    # ---------- STYLE ----------
 
     wrap_style = ParagraphStyle(
 
         name="WrapStyle",
 
         fontName="NotoSans",
-
-        fontSize=10,
-
-        leading=12
-
-    )
-
-    bold_label_style = ParagraphStyle(
-
-        name="BoldLabel",
-
-        fontName="NotoSans-Bold",
 
         fontSize=10,
 
@@ -620,7 +613,10 @@ def download_bill_pdf(
             t.per_day_km,
             t.total_nights,
             t.toll_tax_parking,
-            t.is_return
+            t.is_return,
+
+            u.header_url,
+            u.footer_url
 
         FROM bills b
 
@@ -633,10 +629,15 @@ def download_bill_pdf(
         JOIN trips t
         ON b.trip_id = t.id
 
+        JOIN users u
+        ON b.user_id = u.id
+
         WHERE b.id = %s
         AND b.user_id = %s
         """,
+
         (bill_id, user_id)
+
     )
 
     row = cursor.fetchone()
@@ -645,7 +646,6 @@ def download_bill_pdf(
     conn.close()
 
     if not row:
-
         return {"error": "Bill not found"}
 
     (
@@ -665,7 +665,10 @@ def download_bill_pdf(
         per_day_km,
         total_nights,
         toll_tax_parking,
-        is_return
+        is_return,
+
+        header_url,
+        footer_url
 
     ) = row
 
@@ -705,7 +708,46 @@ def download_bill_pdf(
 
     elements = []
 
-    # ---------- HEADER ----------
+    usable_width = doc.width
+
+    # =====================================================
+    # HEADER IMAGE
+    # =====================================================
+
+    if header_url:
+
+        try:
+
+            response = requests.get(header_url)
+
+            header_img = Image(
+                io.BytesIO(response.content)
+            )
+
+            # Auto scale to page width
+
+            header_img.drawWidth = usable_width
+
+            header_img.drawHeight = (
+
+                header_img.imageHeight
+                * usable_width
+                / header_img.imageWidth
+
+            )
+
+            elements.append(header_img)
+
+            elements.append(
+                Spacer(1, 10)
+            )
+
+        except Exception:
+            pass
+
+    # =====================================================
+    # HEADER TABLE
+    # =====================================================
 
     header_table = Table([
 
@@ -728,7 +770,17 @@ def download_bill_pdf(
 
         ]
 
-    ], colWidths=[150,150,150])
+    ],
+
+        colWidths=[
+
+            usable_width / 3,
+            usable_width / 3,
+            usable_width / 3
+
+        ]
+
+    )
 
     header_table.setStyle(TableStyle([
 
@@ -738,9 +790,13 @@ def download_bill_pdf(
 
     elements.append(header_table)
 
-    elements.append(Spacer(1, 10))
+    elements.append(
+        Spacer(1, 10)
+    )
 
-    # ---------- NAME OF PARTY ----------
+    # =====================================================
+    # NAME OF PARTY
+    # =====================================================
 
     elements.append(
 
@@ -756,9 +812,13 @@ def download_bill_pdf(
 
     )
 
-    elements.append(Spacer(1, 12))
+    elements.append(
+        Spacer(1, 12)
+    )
 
-    # ---------- PARTICULARS ----------
+    # =====================================================
+    # PARTICULARS TABLE
+    # =====================================================
 
     particulars_data = [
 
@@ -769,7 +829,7 @@ def download_bill_pdf(
 
         [
             Paragraph("Rate Per KM", wrap_style),
-            Paragraph(f"₹ {rate_per_km}", wrap_style)
+            Paragraph(f"\u20B9 {rate_per_km}", wrap_style)
         ],
 
         [
@@ -779,7 +839,7 @@ def download_bill_pdf(
 
         [
             Paragraph("Total Night", wrap_style),
-            Paragraph(f"₹ {total_nights}", wrap_style)
+            Paragraph(f"\u20B9 {total_nights}", wrap_style)
         ],
 
         [
@@ -788,8 +848,14 @@ def download_bill_pdf(
         ],
 
         [
-            Paragraph("Toll, Tax & Parking", wrap_style),
-            Paragraph(f"₹ {toll_tax_parking}", wrap_style)
+            Paragraph(
+                "Toll, Tax & Parking",
+                wrap_style
+            ),
+            Paragraph(
+                f"\u20B9 {toll_tax_parking}",
+                wrap_style
+            )
         ],
 
         [
@@ -814,7 +880,12 @@ def download_bill_pdf(
 
         particulars_data,
 
-        colWidths=[260,140]
+        colWidths=[
+
+            usable_width * 0.65,
+            usable_width * 0.35
+
+        ]
 
     )
 
@@ -834,9 +905,13 @@ def download_bill_pdf(
 
     elements.append(particulars_table)
 
-    elements.append(Spacer(1, 15))
+    elements.append(
+        Spacer(1, 15)
+    )
 
-    # ---------- TOTAL ----------
+    # =====================================================
+    # TOTAL TABLE
+    # =====================================================
 
     total_table = Table([
 
@@ -856,7 +931,12 @@ def download_bill_pdf(
 
     ],
 
-        colWidths=[260,140]
+        colWidths=[
+
+            usable_width * 0.65,
+            usable_width * 0.35
+
+        ]
 
     )
 
@@ -876,9 +956,13 @@ def download_bill_pdf(
 
     elements.append(total_table)
 
-    elements.append(Spacer(1, 10))
+    elements.append(
+        Spacer(1, 10)
+    )
 
-    # ---------- RS IN WORDS ----------
+    # =====================================================
+    # RS IN WORDS
+    # =====================================================
 
     elements.append(
 
@@ -894,11 +978,42 @@ def download_bill_pdf(
 
     )
 
+    # =====================================================
+    # FOOTER IMAGE
+    # =====================================================
+
+    if footer_url:
+
+        try:
+
+            response = requests.get(footer_url)
+
+            footer_img = Image(
+                io.BytesIO(response.content)
+            )
+
+            footer_img.drawWidth = usable_width
+
+            footer_img.drawHeight = (
+
+                footer_img.imageHeight
+                * usable_width
+                / footer_img.imageWidth
+
+            )
+
+            elements.append(
+                Spacer(1, 30)
+            )
+
+            elements.append(footer_img)
+
+        except Exception:
+            pass
+
     # ---------- BUILD ----------
 
     doc.build(elements)
-
-    # ---------- DELETE AFTER SEND ----------
 
     background_tasks.add_task(
         delete_file,
