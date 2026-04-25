@@ -5,6 +5,9 @@ import CreateBill from "./pages/Bills/CreateBill/CreateBill";
 import BillsList from "./pages/Bills/BillsList/BillsList";
 import ViewBill from "./pages/Bills/ViewBill/ViewBill";
 import EditBill from "./pages/Bills/EditBill/EditBill";
+import VerifyEmail from "./pages/Auth/VerifyEmail";
+import ResetPassword from "./pages/Auth/ResetPassword";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
 import Settings from "./pages/Settings/Settings";
 import Navbar from "./components/Navbar/Navbar";
 import Layout from "./components/Layout/Layout";
@@ -32,6 +35,21 @@ function App() {
           <Route
             path="/register"
             element={<Register />}
+          />
+
+          <Route
+            path="/verify-email"
+            element={<VerifyEmail />}
+          />
+
+          <Route
+            path="/forgot-password"
+            element={<ForgotPassword />}
+          />
+
+          <Route
+            path="/reset-password"
+            element={<ResetPassword />}
           />
 
           {/* Protected Routes */}

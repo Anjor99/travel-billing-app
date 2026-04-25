@@ -6,7 +6,9 @@ from utils.security import (
     create_access_token
 )
 from services.email_service import send_verification_email
-from schemas.auth_schema import RegisterRequest, LoginRequest
+from schemas.auth_schema import RegisterRequest, LoginRequest, ResetPasswordRequest, ForgotPasswordRequest
+from datetime import datetime, timedelta
+from services.email_service import send_reset_password_email
 import uuid
 
 router = APIRouter(
@@ -167,4 +169,143 @@ def login_user(payload: LoginRequest):
     return {
         "access_token": token,
         "token_type": "bearer"
+    }
+    
+@router.post("/forgot-password")
+def forgot_password(
+    payload: ForgotPasswordRequest
+):
+
+    email = payload.email
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT id
+        FROM users
+        WHERE email=%s
+        """,
+        (email,)
+    )
+
+    user = cursor.fetchone()
+
+    if not user:
+
+        cursor.close()
+        conn.close()
+
+        raise HTTPException(
+            status_code=404,
+            detail="Email not found"
+        )
+
+    import uuid
+    from datetime import datetime, timedelta
+
+    token = str(uuid.uuid4())
+
+    expiry = (
+        datetime.utcnow()
+        + timedelta(minutes=30)
+    )
+
+    cursor.execute(
+        """
+        UPDATE users
+        SET
+            reset_token=%s,
+            reset_token_expiry=%s
+        WHERE email=%s
+        """,
+        (
+            token,
+            expiry,
+            email
+        )
+    )
+
+    conn.commit()
+
+    from services.email_service import send_reset_password_email
+
+    send_reset_password_email(
+        email,
+        token
+    )
+
+    cursor.close()
+    conn.close()
+
+    return {
+
+        "message":
+        "Reset email sent"
+
+    }
+    
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordRequest):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT id,
+               reset_token_expiry
+        FROM users
+        WHERE reset_token=%s
+        """,
+        (payload.token,)
+    )
+
+    user = cursor.fetchone()
+
+    if not user:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid token"
+        )
+
+    expiry = user[1]
+
+    if expiry < datetime.utcnow():
+
+        raise HTTPException(
+            status_code=400,
+            detail="Token expired"
+        )
+
+    hashed_password = hash_password(payload.new_password)
+
+    cursor.execute(
+        """
+        UPDATE users
+        SET
+            password=%s,
+            reset_token=NULL,
+            reset_token_expiry=NULL
+        WHERE reset_token=%s
+        """,
+        (
+            hashed_password,
+            payload.token
+        )
+    )
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return {
+
+        "message":
+        "Password updated"
+
     }

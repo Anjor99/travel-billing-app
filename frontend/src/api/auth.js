@@ -26,3 +26,50 @@ export const registerUser = async (data) => {
   return res.data;
 
 };
+
+// VERIFY EMAIL
+export const verifyEmail =
+  async (token) => {
+
+  const res =
+    await apiClient.get(
+
+      endpoints.auth.verifyEmail(token)
+
+    );
+
+  return res.data;
+
+};
+
+// FORGOT PASSWORD
+export const forgotPassword =
+  async (data) => {
+
+  const res =
+    await apiClient.post(
+
+      endpoints.auth.forgotPwd,
+      data
+
+    );
+
+  return res.data;
+
+};
+
+// RESET PASSWORD
+export const resetPassword =
+  async (data) => {
+
+  const res =
+    await apiClient.post(
+
+      endpoints.auth.resetPwd,
+      data
+
+    );
+
+  return res.data;
+
+};

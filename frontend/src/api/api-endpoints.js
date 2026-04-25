@@ -3,6 +3,9 @@ const endpoints = {
   auth:{
     login: "/api/auth/login",
     register: "/api/auth/register",
+    verifyEmail: (token) => `/api/auth/verify-email?token=${token}`,
+    forgotPwd: "/api/auth/forgot-password",
+    resetPwd: "/api/auth/reset-password"
   },
   
   bills:{

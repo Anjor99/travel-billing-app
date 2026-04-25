@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAlert } from "../../context/AlertContext";
 
 import InputField
   from "../../components/InputField/InputField";
@@ -21,13 +22,15 @@ import Link from "@mui/material/Link";
 function Register() {
 
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
 
   const [form, setForm] =
     useState({
 
       name: "",
       email: "",
-      password: ""
+      password: "",
+      password2: ""
 
     });
 
@@ -58,22 +61,27 @@ function Register() {
 
         setLoading(true);
 
-        await registerUser(form);
+        if (form.password != form.password2) {
+          showAlert("Passwords are not matching","warning")
+          return ;
+        } else {
+          await registerUser(form);
 
-        alert(
-          "Registration successful! Please verify your email."
-        );
+          showAlert(
+            "Registration successful! Please verify your email.","success"
+          );
 
-        navigate("/");
+          navigate("/");
+        }
 
       }
       catch (err) {
 
         console.error(err);
 
-        alert(
+        showAlert(
           err?.response?.data?.detail
-          || "Registration failed"
+          || "Registration failed","error"
         );
 
       }
@@ -144,6 +152,14 @@ function Register() {
             name="password"
             type="password"
             value={form.password}
+            onChange={handleChange}
+          />
+
+          <InputField
+            label="Repeat Password"
+            name="password2"
+            type="password"
+            value={form.password2}
             onChange={handleChange}
           />
 

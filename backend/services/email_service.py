@@ -1,45 +1,188 @@
 import smtplib
-from email.mime.text import MIMEText
-from config import settings
 
-def send_verification_email(
-    to_email: str,
-    token: str
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+from jinja2 import Environment, FileSystemLoader
+
+from config import settings
+from datetime import datetime, timedelta
+import uuid
+
+
+# =========================
+# Load Templates
+# =========================
+
+env = Environment(
+
+    loader=FileSystemLoader(
+        "templates/email"
+    )
+
+)
+
+
+# =========================
+# Render Template
+# =========================
+
+def render_template(
+
+    template_name: str,
+    context: dict
+
 ):
 
-    verification_link = (
-        f"{settings.APP_BASE_URL}/auth/verify-email?token={token}"
+    template = env.get_template(
+        template_name
     )
 
-    subject = "Verify Your Email"
+    return template.render(
+        context
+    )
 
-    body = f"""
-    Welcome!
 
-    Click below to verify your email:
+# =========================
+# Send Verification Email
+# =========================
 
-    {verification_link}
+def send_verification_email(
 
-    """
+    email: str,
+    token: str
 
-    msg = MIMEText(body)
+):
 
-    msg["Subject"] = subject
-    msg["From"] = settings.EMAIL_USER
-    msg["To"] = to_email
+    verify_link = (
 
-    server = smtplib.SMTP(
+        f"{settings.APP_BASE_URL}"
+        f"/verify-email?token={token}"
+
+    )
+
+
+    html_content = render_template(
+
+        "verify_email.html",
+
+        {
+
+            "verify_link":
+                verify_link
+
+        }
+
+    )
+
+
+    message = MIMEMultipart()
+
+    message["From"] = settings.EMAIL_USER
+    message["To"] = email
+    message["Subject"] = "Verify Your Email"
+
+
+    message.attach(
+
+        MIMEText(
+            html_content,
+            "html"
+        )
+
+    )
+
+
+    try:
+
+        with smtplib.SMTP(
+
+            settings.EMAIL_HOST,
+
+            int(settings.EMAIL_PORT)
+
+        ) as server:
+
+            server.starttls()
+
+            server.login(
+
+                settings.EMAIL_USER,
+
+                settings.EMAIL_PASSWORD
+
+            )
+
+            server.send_message(
+                message
+            )
+
+    except Exception as e:
+
+        print(
+            "Email send error:",
+            str(e)
+        )
+
+
+def send_reset_password_email(
+
+    email: str,
+    token: str
+
+):
+
+    reset_link = (
+
+        f"{settings.APP_BASE_URL}"
+        f"/reset-password?token={token}"
+
+    )
+
+    html_content = render_template(
+
+        "forgot_password.html",
+
+        {
+
+            "reset_link":
+                reset_link
+
+        }
+
+    )
+
+    message = MIMEMultipart()
+
+    message["From"] = settings.EMAIL_USER
+    message["To"] = email
+    message["Subject"] = "Reset Your Password"
+
+    message.attach(
+
+        MIMEText(
+            html_content,
+            "html"
+        )
+
+    )
+
+    with smtplib.SMTP(
+
         settings.EMAIL_HOST,
         int(settings.EMAIL_PORT)
-    )
 
-    server.starttls()
+    ) as server:
 
-    server.login(
-        settings.EMAIL_USER,
-        settings.EMAIL_PASSWORD
-    )
+        server.starttls()
 
-    server.send_message(msg)
+        server.login(
 
-    server.quit()
+            settings.EMAIL_USER,
+            settings.EMAIL_PASSWORD
+
+        )
+
+        server.send_message(
+            message
+        )
