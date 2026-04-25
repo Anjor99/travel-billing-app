@@ -45,6 +45,16 @@ app.mount(
 # REACT APP
 # -------------------------
 
+@app.get("/favicon.png")
+def favicon_png():
+
+    favicon_path = os.path.join(
+        frontend_path,
+        "favicon.png"
+    )
+
+    return FileResponse(favicon_path)
+
 @app.get("/{full_path:path}")
 def serve_react(full_path: str):
 
