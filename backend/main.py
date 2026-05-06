@@ -20,6 +20,14 @@ app.add_middleware(
 )
 
 # -------------------------
+# HEALTH CHECK ROUTES
+# -------------------------
+
+@app.get("/healthz")
+def health_check():
+    return {"status": "healthy"}
+
+# -------------------------
 # API ROUTES
 # -------------------------
 
