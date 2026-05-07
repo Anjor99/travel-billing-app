@@ -6,8 +6,6 @@ from email.mime.multipart import MIMEMultipart
 from jinja2 import Environment, FileSystemLoader
 
 from config import settings
-from datetime import datetime, timedelta
-import uuid
 
 
 # =========================
@@ -44,7 +42,66 @@ def render_template(
 
 
 # =========================
-# Send Verification Email
+# Shared Email Sender
+# =========================
+
+def send_email(
+
+    recipient: str,
+    subject: str,
+    html_content: str
+
+):
+
+    message = MIMEMultipart()
+
+    message["From"] = settings.EMAIL_USER
+    message["To"] = recipient
+    message["Subject"] = subject
+
+    message.attach(
+
+        MIMEText(
+            html_content,
+            "html"
+        )
+
+    )
+
+    try:
+
+        with smtplib.SMTP_SSL(
+
+            settings.EMAIL_HOST,
+            int(settings.EMAIL_PORT)
+
+        ) as server:
+
+            server.login(
+
+                settings.EMAIL_USER,
+                settings.EMAIL_PASSWORD
+
+            )
+
+            server.send_message(
+                message
+            )
+
+            print(
+                f"Email sent successfully to {recipient}"
+            )
+
+    except Exception as e:
+
+        print(
+            "Email send error:",
+            str(e)
+        )
+
+
+# =========================
+# Verification Email
 # =========================
 
 def send_verification_email(
@@ -61,7 +118,6 @@ def send_verification_email(
 
     )
 
-
     html_content = render_template(
 
         "verify_email.html",
@@ -75,55 +131,18 @@ def send_verification_email(
 
     )
 
+    send_email(
 
-    message = MIMEMultipart()
-
-    message["From"] = settings.EMAIL_USER
-    message["To"] = email
-    message["Subject"] = "Verify Your Email"
-
-
-    message.attach(
-
-        MIMEText(
-            html_content,
-            "html"
-        )
+        recipient=email,
+        subject="Verify Your Email",
+        html_content=html_content
 
     )
 
 
-    try:
-
-        with smtplib.SMTP(
-
-            settings.EMAIL_HOST,
-
-            int(settings.EMAIL_PORT)
-
-        ) as server:
-
-            server.starttls()
-
-            server.login(
-
-                settings.EMAIL_USER,
-
-                settings.EMAIL_PASSWORD
-
-            )
-
-            server.send_message(
-                message
-            )
-
-    except Exception as e:
-
-        print(
-            "Email send error:",
-            str(e)
-        )
-
+# =========================
+# Reset Password Email
+# =========================
 
 def send_reset_password_email(
 
@@ -152,37 +171,10 @@ def send_reset_password_email(
 
     )
 
-    message = MIMEMultipart()
+    send_email(
 
-    message["From"] = settings.EMAIL_USER
-    message["To"] = email
-    message["Subject"] = "Reset Your Password"
-
-    message.attach(
-
-        MIMEText(
-            html_content,
-            "html"
-        )
+        recipient=email,
+        subject="Reset Your Password",
+        html_content=html_content
 
     )
-
-    with smtplib.SMTP(
-
-        settings.EMAIL_HOST,
-        int(settings.EMAIL_PORT)
-
-    ) as server:
-
-        server.starttls()
-
-        server.login(
-
-            settings.EMAIL_USER,
-            settings.EMAIL_PASSWORD
-
-        )
-
-        server.send_message(
-            message
-        )
