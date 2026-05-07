@@ -24,6 +24,7 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv(
         "ACCESS_TOKEN_EXPIRE_MINUTES"
     )
+    ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
 
 settings = Settings()
 
